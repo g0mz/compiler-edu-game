@@ -1,0 +1,278 @@
+[
+ {
+  "t": "wait",
+  "s": 0.3
+ },
+ {
+  "t": "call",
+  "path": ".",
+  "m": "_start_challenge",
+  "args": [
+   0
+  ]
+ },
+ {
+  "t": "callon",
+  "path": ".",
+  "prop": "session",
+  "m": "configure",
+  "args": [
+   {
+    "root": {
+     "token": "+"
+    },
+    "left": {
+     "token": "a"
+    },
+    "right": {
+     "token": "*"
+    },
+    "right_left": {
+     "token": "b"
+    },
+    "right_right": {
+     "token": "c"
+    }
+   },
+   [
+    "a",
+    "+",
+    "*",
+    "b",
+    "c"
+   ]
+  ]
+ },
+ {
+  "t": "call",
+  "path": ".",
+  "m": "_update_held_token",
+  "args": []
+ },
+ {
+  "t": "wait",
+  "s": 0.4
+ },
+ {
+  "t": "button",
+  "v": "COMEÇAR"
+ },
+ {
+  "t": "wait",
+  "s": 1.0
+ },
+ {
+  "t": "floor"
+ },
+ {
+  "t": "hold",
+  "a": "move_right"
+ },
+ {
+  "t": "x>=",
+  "v": 190
+ },
+ {
+  "t": "tap",
+  "a": "jump"
+ },
+ {
+  "t": "wait",
+  "s": 0.3
+ },
+ {
+  "t": "floor"
+ },
+ {
+  "t": "release",
+  "a": "move_right"
+ },
+ {
+  "t": "wait",
+  "s": 0.05
+ },
+ {
+  "t": "tap",
+  "a": "jump"
+ },
+ {
+  "t": "hold",
+  "a": "move_left"
+ },
+ {
+  "t": "x<=",
+  "v": 440
+ },
+ {
+  "t": "release",
+  "a": "move_left"
+ },
+ {
+  "t": "wait",
+  "s": 0.2
+ },
+ {
+  "t": "floor"
+ },
+ {
+  "t": "wait",
+  "s": 0.1
+ },
+ {
+  "t": "tap",
+  "a": "interact"
+ },
+ {
+  "t": "wait",
+  "s": 0.45
+ },
+ {
+  "t": "hold",
+  "a": "move_right"
+ },
+ {
+  "t": "tap",
+  "a": "jump"
+ },
+ {
+  "t": "wait",
+  "s": 0.3
+ },
+ {
+  "t": "floor"
+ },
+ {
+  "t": "x>=",
+  "v": 630
+ },
+ {
+  "t": "release",
+  "a": "move_right"
+ },
+ {
+  "t": "wait",
+  "s": 0.1
+ },
+ {
+  "t": "tap",
+  "a": "interact"
+ },
+ {
+  "t": "wait",
+  "s": 0.45
+ },
+ {
+  "t": "hold",
+  "a": "move_right"
+ },
+ {
+  "t": "x>=",
+  "v": 745
+ },
+ {
+  "t": "wait",
+  "s": 0.25
+ },
+ {
+  "t": "floor"
+ },
+ {
+  "t": "x>=",
+  "v": 835
+ },
+ {
+  "t": "release",
+  "a": "move_right"
+ },
+ {
+  "t": "wait",
+  "s": 0.1
+ },
+ {
+  "t": "tap",
+  "a": "interact"
+ },
+ {
+  "t": "wait",
+  "s": 0.45
+ },
+ {
+  "t": "hold",
+  "a": "move_left"
+ },
+ {
+  "t": "x<=",
+  "v": 742
+ },
+ {
+  "t": "release",
+  "a": "move_left"
+ },
+ {
+  "t": "wait",
+  "s": 0.2
+ },
+ {
+  "t": "floor"
+ },
+ {
+  "t": "hold",
+  "a": "move_right"
+ },
+ {
+  "t": "x>=",
+  "v": 770
+ },
+ {
+  "t": "release",
+  "a": "move_right"
+ },
+ {
+  "t": "wait",
+  "s": 0.1
+ },
+ {
+  "t": "tap",
+  "a": "interact"
+ },
+ {
+  "t": "wait",
+  "s": 0.45
+ },
+ {
+  "t": "hold",
+  "a": "move_right"
+ },
+ {
+  "t": "x>=",
+  "v": 950
+ },
+ {
+  "t": "release",
+  "a": "move_right"
+ },
+ {
+  "t": "wait",
+  "s": 0.1
+ },
+ {
+  "t": "tap",
+  "a": "interact"
+ },
+ {
+  "t": "wait",
+  "s": 0.9
+ },
+ {
+  "t": "hold",
+  "a": "move_right"
+ },
+ {
+  "t": "wait",
+  "s": 2.2
+ },
+ {
+  "t": "release",
+  "a": "move_right"
+ }
+]

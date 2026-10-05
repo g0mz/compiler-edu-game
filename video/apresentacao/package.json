@@ -3,10 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "assets": "node preparar-assets.mjs",
+    "assets": "node preparar-assets.mjs && python3 trilha.py",
     "check": "npm run assets && npx --yes hyperframes@0.8.133 check",
     "render": "npm run assets && npx --yes hyperframes@0.8.133 render --fps 60 --quality high -o renders/apresentacao.mp4",
-    "render:rascunho": "npm run assets && npx --yes hyperframes@0.8.133 render --fps 30 --quality draft -o renders/rascunho.mp4"
+    "render:rascunho": "npm run assets && npx --yes hyperframes@0.8.133 render --fps 30 --quality draft -o renders/rascunho.mp4",
+    "gameplay": "bash gameplay/gravar.sh"
   },
   "dependencies": {
     "@fontsource/jersey-10": "5.2.8",
