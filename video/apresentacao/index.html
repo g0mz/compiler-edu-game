@@ -1,0 +1,970 @@
+<!doctype html>
+<html lang="pt-BR" data-resolution="portrait">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <script src="node_modules/gsap/dist/gsap.min.js"></script>
+    <style>
+      @font-face {
+        font-family: "Press Start 2P";
+        src: url("node_modules/@fontsource/press-start-2p/files/press-start-2p-latin-400-normal.woff2") format("woff2");
+        font-weight: 400;
+      }
+      @font-face {
+        font-family: "Silkscreen";
+        src: url("node_modules/@fontsource/silkscreen/files/silkscreen-latin-700-normal.woff2") format("woff2");
+        font-weight: 400 700;
+      }
+      @font-face {
+        font-family: "Jersey 10";
+        src: url("node_modules/@fontsource/jersey-10/files/jersey-10-latin-400-normal.woff2") format("woff2");
+        font-weight: 400 700;
+      }
+      @font-face {
+        font-family: "VT323";
+        src: url("node_modules/@fontsource/vt323/files/vt323-latin-400-normal.woff2") format("woff2");
+        font-weight: 400;
+      }
+
+      /* Paleta tirada do jogo: menu (scripts/menu/menu.gd, scenes/menu/menu.tscn)
+         e cores dos tipos de token (scripts/fase2_scanner/scanner_data.gd). */
+      :root {
+        --marinho: #19376d;
+        --marinho-escuro: #0e1f40;
+        --verde: #34a853;
+        --verde-claro: #42b863;
+        --ouro: #fabd05;
+        --ouro-claro: #ffd94d;
+        --azul: #4285f5;
+        --vermelho: #ea4335;
+        --roxo: #4a1f8c;
+        --roxo-claro: #8a4fff;
+        --pedra: #3d4256;
+        --floresta: #12402c;
+        --lavanda: #f2e6ff;
+        --preto: #000;
+        --branco: #fff;
+        --t-palavra: #58a6ff;
+        --t-ident: #6ee7a8;
+        --t-numero: #c084fc;
+        --t-operador: #fbbf24;
+        --t-simbolo: #fb7185;
+        --contorno: 4px 0 0 #000, -4px 0 0 #000, 0 4px 0 #000, 0 -4px 0 #000, 4px 4px 0 #000,
+          -4px -4px 0 #000, 4px -4px 0 #000, -4px 4px 0 #000, 10px 10px 0 #000;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: var(--marinho);
+      }
+      #root {
+        position: relative;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        font-family: "Jersey 10", monospace;
+        color: var(--preto);
+      }
+      img {
+        display: block;
+        image-rendering: pixelated;
+      }
+      .cena {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+      }
+      /* grade de pixels sutil sobre a cor chapada do fundo */
+      .cena::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image: linear-gradient(rgba(0, 0, 0, 0.09) 3px, transparent 3px),
+          linear-gradient(90deg, rgba(0, 0, 0, 0.09) 3px, transparent 3px);
+        background-size: 60px 60px;
+      }
+      .abs {
+        position: absolute;
+      }
+      /* Silkscreen: títulos e rótulos (acentos legíveis com contorno) */
+      .px {
+        font-family: "Silkscreen", monospace;
+        font-weight: 700;
+      }
+      /* Press Start 2P: só no logo, que não tem acentos */
+      .logo {
+        font-family: "Press Start 2P", monospace;
+        font-weight: 400;
+      }
+      .contorno {
+        color: var(--branco);
+        text-shadow: var(--contorno);
+      }
+      .bloco {
+        border: 6px solid var(--preto);
+        box-shadow: 12px 12px 0 var(--preto);
+      }
+      .adesivo {
+        position: absolute;
+      }
+      .adesivo svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      /* ---------- elementos comuns das fases ---------- */
+      .chip-fase {
+        left: 108px;
+        top: 196px;
+        font-size: 34px;
+        padding: 14px 18px 12px;
+        background: var(--ouro);
+        border: 5px solid var(--preto);
+        box-shadow: 8px 8px 0 var(--preto);
+        transform-origin: left center;
+      }
+      .titulo-fase {
+        left: 108px;
+        top: 290px;
+        width: 580px;
+        font-size: 66px;
+        line-height: 1.08;
+      }
+      .card-mini {
+        left: 700px;
+        top: 186px;
+        width: 272px;
+        background: var(--preto);
+      }
+      .card-mini img {
+        width: 100%;
+      }
+      .objetivo {
+        left: 108px;
+        top: 560px;
+        width: 864px;
+        padding: 26px 32px 30px;
+        background: var(--branco);
+        transform-origin: left top;
+      }
+      .objetivo .rotulo {
+        font-size: 28px;
+        color: #1e7b3a;
+        margin-bottom: 14px;
+      }
+      .objetivo p {
+        font-weight: 400;
+        font-size: 64px;
+        line-height: 1;
+      }
+      .zona {
+        left: 108px;
+        top: 820px;
+        width: 864px;
+        height: 760px;
+      }
+      .codigo {
+        left: 0;
+        top: 0;
+        width: 864px;
+        height: 130px;
+        background: var(--marinho-escuro);
+        color: var(--branco);
+        font-family: "VT323", monospace;
+        font-size: 80px;
+        line-height: 118px;
+        text-align: center;
+        white-space: nowrap;
+      }
+      /* cada caractere ocupa 40px: posições no código são conhecidas sem medir a fonte */
+      .codigo .ch {
+        display: inline-block;
+        width: 40px;
+        text-align: center;
+      }
+      .token {
+        font-family: "VT323", monospace;
+        font-size: 66px;
+        line-height: 1;
+        padding: 12px 22px 10px;
+        border: 6px solid var(--preto);
+        box-shadow: 9px 9px 0 var(--preto);
+        text-align: center;
+        white-space: pre;
+      }
+      .k-palavra {
+        background: var(--t-palavra);
+      }
+      .k-ident {
+        background: var(--t-ident);
+      }
+      .k-numero {
+        background: var(--t-numero);
+      }
+      .k-operador {
+        background: var(--t-operador);
+      }
+      .k-simbolo {
+        background: var(--t-simbolo);
+      }
+      .ponto {
+        font-size: 50px;
+        color: var(--ouro-claro);
+        text-shadow: var(--contorno);
+      }
+      .carimbo {
+        font-size: 38px;
+        padding: 20px 26px 18px;
+        border: 6px solid var(--preto);
+        box-shadow: 10px 10px 0 var(--preto);
+        white-space: nowrap;
+      }
+      .placar {
+        width: 290px;
+        height: 150px;
+        background: var(--marinho-escuro);
+        color: var(--branco);
+        text-align: center;
+      }
+      .placar .rotulo {
+        font-size: 26px;
+        color: var(--ouro-claro);
+        margin-top: 22px;
+      }
+      .placar .valor {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 62px;
+        font-size: 64px;
+      }
+
+      /* ---------- transição em blocos de pixel ---------- */
+      #wipe {
+        position: absolute;
+        inset: 0;
+        z-index: 50;
+        pointer-events: none;
+        display: grid;
+        grid-template-columns: repeat(8, 135px);
+        grid-template-rows: repeat(14, 137.15px);
+      }
+      #wipe i {
+        display: block;
+        background: var(--preto);
+        transform: scale(0);
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="64"
+      data-width="1080"
+      data-height="1920"
+    >
+      <!-- ===================== C1 · ABERTURA (0 – 5) ===================== -->
+      <section id="c1" class="cena clip" data-start="0" data-duration="5" data-track-index="0" style="background: var(--marinho)">
+        <div id="c1-adesivos"></div>
+        <div id="c1-selo" class="abs px bloco" style="left: 290px; top: 250px; width: 500px; padding: 16px 0 14px; text-align: center; font-size: 30px; background: var(--verde-claro)">JOGO EDUCATIVO</div>
+        <div id="c1-logo" class="abs" style="left: 0; top: 430px; width: 1080px; text-align: center">
+          <div id="c1-l1" class="logo contorno" style="font-size: 104px; line-height: 150px">COMPILER</div>
+          <div id="c1-l2" class="logo contorno" style="font-size: 104px; line-height: 150px; color: var(--verde)">{&lt;/&gt;}</div>
+          <div id="c1-l3" class="logo contorno" style="font-size: 104px; line-height: 150px; color: var(--ouro)">EDU</div>
+          <div id="c1-l4" class="logo contorno" style="font-size: 104px; line-height: 150px; color: var(--azul)">GAME</div>
+        </div>
+        <div id="c1-sub" class="abs bloco" style="left: 120px; top: 1080px; width: 840px; padding: 24px 0 26px; text-align: center; background: var(--ouro); font-weight: 700; font-size: 72px">Aprenda compiladores<br />jogando!</div>
+        <img id="c1-jogador" class="abs" src="midia/jogador-pulando.png" style="left: 440px; top: 1330px; width: 200px" alt="" />
+      </section>
+
+      <!-- ===================== C2 · PREMISSA (5 – 10) ===================== -->
+      <section id="c2" class="cena clip" data-start="5" data-duration="5" data-track-index="0" style="background: var(--ouro)">
+        <div id="c2-adesivos"></div>
+        <div class="abs" style="left: 108px; top: 230px; width: 864px">
+          <div id="c2-t1" class="px contorno" style="font-size: 78px; line-height: 96px">VOCÊ FOI</div>
+          <div id="c2-t2" class="px contorno" style="font-size: 78px; line-height: 96px">PARAR</div>
+          <div id="c2-t3" class="px contorno" style="font-size: 78px; line-height: 96px">DENTRO DE UM</div>
+          <div id="c2-t4" class="px bloco" style="display: inline-block; margin-top: 18px; font-size: 80px; padding: 24px 26px 20px; background: var(--marinho); color: var(--branco)">COMPILADOR!</div>
+        </div>
+        <div id="c2-janela" class="abs bloco" style="left: 108px; top: 820px; width: 864px; height: 560px; overflow: hidden; background: var(--azul)">
+          <img src="midia/fundo-reino.png" style="width: 1040px; margin-left: -88px; margin-top: -20px" alt="" />
+        </div>
+        <img id="c2-andando" class="abs" src="midia/jogador-andando.png" style="left: 400px; top: 960px; width: 190px" alt="" />
+        <img id="c2-parado" class="abs" src="midia/jogador-parado.png" style="left: 412px; top: 983px; width: 166px" alt="" />
+        <img id="c2-pulando" class="abs" src="midia/jogador-pulando.png" style="left: 400px; top: 1010px; width: 189px" alt="" />
+        <div id="c2-legenda" class="abs bloco" style="left: 180px; top: 1440px; width: 720px; padding: 20px 0 22px; text-align: center; background: var(--branco); font-weight: 700; font-size: 55px">Cada mundo é uma etapa<br />da compilação.</div>
+      </section>
+
+      <!-- ===================== C3 · MAPA (10 – 16.5) ===================== -->
+      <section id="c3" class="cena clip" data-start="10" data-duration="6.5" data-track-index="0" style="background: var(--marinho-escuro)">
+        <div id="c3-adesivos"></div>
+        <div id="c3-titulo" class="abs px contorno" style="left: 0; width: 1080px; top: 196px; text-align: center; font-size: 90px">6 MUNDOS</div>
+        <div id="c3-sub" class="abs" style="left: 0; width: 1080px; top: 330px; text-align: center; font-weight: 700; font-size: 55px; color: var(--lavanda)">Do código-fonte até os erros</div>
+        <div id="c3-lista" class="abs" style="left: 108px; top: 400px; width: 864px"></div>
+      </section>
+
+      <!-- ===================== C4 · FASE 1 (16.5 – 24.5) ===================== -->
+      <section id="c4" class="cena clip" data-start="16.5" data-duration="8" data-track-index="0" style="background: var(--verde)">
+        <div id="c4-adesivos"></div>
+        <div id="c4-chip" class="abs px chip-fase">FASE 1</div>
+        <div id="c4-titulo" class="abs px contorno titulo-fase">REINO DOS<br />TOKENS</div>
+        <div id="c4-card" class="abs bloco card-mini"><img src="midia/card-fase1.png" alt="" /></div>
+        <div id="c4-obj" class="abs bloco objetivo">
+          <div class="rotulo px">OBJETIVO</div>
+          <p>Colete os tokens certos e desvie dos espinhos!</p>
+        </div>
+        <div class="abs zona">
+          <div id="c4-placa" class="abs px bloco" style="left: 132px; top: 0; width: 600px; padding: 22px 0 18px; text-align: center; font-size: 32px; line-height: 1.5; background: #8b5a2b; color: var(--branco)">COLETE APENAS<br />PALAVRAS-CHAVE!</div>
+          <div id="c4-tk1" class="abs token k-palavra" style="left: 20px; top: 200px">int</div>
+          <div id="c4-tk2" class="abs token k-ident" style="left: 320px; top: 230px">soma</div>
+          <div id="c4-tk3" class="abs token k-palavra" style="left: 660px; top: 190px">if</div>
+          <div id="c4-tk4" class="abs token k-operador" style="left: 60px; top: 380px">=</div>
+          <div id="c4-tk5" class="abs token k-palavra" style="left: 280px; top: 400px">return</div>
+          <div id="c4-tk6" class="abs token k-numero" style="left: 680px; top: 380px">10</div>
+          <div id="c4-p1" class="abs px ponto" style="left: 40px; top: 160px">+10</div>
+          <div id="c4-p2" class="abs px ponto" style="left: 670px; top: 150px">+10</div>
+          <div id="c4-p3" class="abs px ponto" style="left: 330px; top: 360px">+10</div>
+          <img id="c4-jogador" class="abs" src="midia/jogador-pulando.png" style="left: 40px; top: 520px; width: 150px" alt="" />
+          <div id="c4-placar" class="abs bloco placar" style="left: 560px; top: 560px">
+            <div class="rotulo px">PONTOS</div>
+            <div id="c4-v0" class="valor px">0</div>
+            <div id="c4-v1" class="valor px">10</div>
+            <div id="c4-v2" class="valor px">20</div>
+            <div id="c4-v3" class="valor px">30</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== C5 · FASE 2 (24.5 – 32.5) ===================== -->
+      <section id="c5" class="cena clip" data-start="24.5" data-duration="8" data-track-index="0" style="background: var(--azul)">
+        <div id="c5-adesivos"></div>
+        <div id="c5-chip" class="abs px chip-fase">FASE 2</div>
+        <div id="c5-titulo" class="abs px contorno titulo-fase">VALE DO<br />SCANNER</div>
+        <div id="c5-card" class="abs bloco card-mini"><img src="midia/card-fase2.png" alt="" /></div>
+        <div id="c5-obj" class="abs bloco objetivo">
+          <div class="rotulo px">OBJETIVO</div>
+          <p>Leve cada token até a estação, na ordem certa, e complete a ponte!</p>
+        </div>
+        <div class="abs zona">
+          <div id="c5-codigo" class="abs bloco codigo" data-codigo="int x = 10;"></div>
+          <div id="c5-feixe" class="abs" style="left: 0; top: 6px; width: 132px; height: 118px; background: rgba(255, 217, 77, 0.55); border-left: 6px solid var(--ouro-claro); border-right: 6px solid var(--ouro-claro)"></div>
+          <div id="c5-lista" class="abs" style="left: 0; top: 168px; width: 864px"></div>
+          <div id="c5-carimbo" class="abs px carimbo" style="left: 168px; top: 660px; background: var(--verde-claro); color: var(--branco); text-shadow: 3px 3px 0 #000">PONTE COMPLETA!</div>
+        </div>
+      </section>
+
+      <!-- ===================== C6 · FASE 3 (32.5 – 36.5) ===================== -->
+      <section id="c6" class="cena clip" data-start="32.5" data-duration="4" data-track-index="0" style="background: var(--pedra)">
+        <div id="c6-adesivos"></div>
+        <div id="c6-chip" class="abs px chip-fase">FASE 3</div>
+        <div id="c6-titulo" class="abs px contorno titulo-fase">CAVERNA<br />DO PARSER</div>
+        <div id="c6-cadeado" class="abs adesivo" style="left: 760px; top: 190px; width: 180px; height: 220px"></div>
+        <div id="c6-breve" class="abs px carimbo" style="left: 650px; top: 420px; background: var(--ouro)">EM BREVE</div>
+        <div id="c6-obj" class="abs bloco objetivo">
+          <div class="rotulo px">OBJETIVO</div>
+          <p>Verifique se os tokens seguem a gramática da linguagem.</p>
+        </div>
+        <div class="abs zona">
+          <div id="c6-codigo" class="abs bloco codigo" data-codigo="if ( x > 0 )"></div>
+          <div id="c6-pergunta" class="abs px contorno" style="left: 0; width: 864px; top: 210px; text-align: center; font-size: 55px">É VÁLIDO?</div>
+          <div id="c6-sim" class="abs px carimbo" style="left: 110px; top: 330px; width: 280px; text-align: center; background: var(--verde-claro); color: var(--branco); text-shadow: 3px 3px 0 #000">SIM</div>
+          <div id="c6-nao" class="abs px carimbo" style="left: 474px; top: 330px; width: 280px; text-align: center; background: var(--vermelho); color: var(--branco); text-shadow: 3px 3px 0 #000">NÃO</div>
+        </div>
+      </section>
+
+      <!-- ===================== C7 · FASE 4 (36.5 – 44.5) ===================== -->
+      <section id="c7" class="cena clip" data-start="36.5" data-duration="8" data-track-index="0" style="background: var(--floresta)">
+        <div id="c7-adesivos"></div>
+        <div id="c7-chip" class="abs px chip-fase">FASE 4</div>
+        <div id="c7-titulo" class="abs px contorno titulo-fase">FLORESTA<br />DA AST</div>
+        <div id="c7-card" class="abs bloco card-mini"><img src="midia/card-fase4.png" alt="" /></div>
+        <div id="c7-obj" class="abs bloco objetivo">
+          <div class="rotulo px">OBJETIVO</div>
+          <p>Monte a árvore sintática respeitando a precedência!</p>
+        </div>
+        <div class="abs zona">
+          <div id="c7-codigo" class="abs bloco codigo" data-codigo="a + b * c"></div>
+          <div id="c7-arvore" class="abs" style="left: 0; top: 0; width: 864px; height: 760px"></div>
+          <div id="c7-licao" class="abs bloco" style="left: 0; top: 664px; width: 864px; padding: 16px 0 18px; text-align: center; background: var(--ouro-claro); font-weight: 700; font-size: 50px">A multiplicação vem primeiro!</div>
+        </div>
+      </section>
+
+      <!-- ===================== C8 · FASE 5 (44.5 – 52.5) ===================== -->
+      <section id="c8" class="cena clip" data-start="44.5" data-duration="8" data-track-index="0" style="background: var(--roxo)">
+        <div id="c8-adesivos"></div>
+        <div id="c8-chip" class="abs px chip-fase">FASE 5</div>
+        <div id="c8-titulo" class="abs px contorno titulo-fase" style="font-size: 62px">CASTELO<br />DOS ERROS<br />LÉXICOS</div>
+        <div id="c8-card" class="abs bloco card-mini" style="left: 740px; width: 232px"><img src="midia/card-fase5.png" alt="" /></div>
+        <div id="c8-obj" class="abs bloco objetivo">
+          <div class="rotulo px">OBJETIVO</div>
+          <p>Pule nos monstros de erro e poupe os monstros de acerto!</p>
+        </div>
+        <div class="abs zona">
+          <div id="c8-codigo" class="abs bloco codigo" data-codigo="int @idade = 10;"></div>
+          <div id="c8-codigo-ok" class="abs bloco codigo" style="background: #0f3d26" data-codigo="int idade = 10;"></div>
+          <div class="abs" style="left: 0; top: 600px; width: 864px; height: 40px; background: #2a1150; border: 6px solid var(--preto)"></div>
+          <img id="c8-mal" class="abs" src="midia/monstro-invalido.png" style="left: 130px; top: 400px; width: 210px" alt="" />
+          <img id="c8-derrotado" class="abs" src="midia/monstro-derrotado.png" style="left: 160px; top: 534px; width: 150px" alt="" />
+          <div id="c8-tag-mal" class="abs px carimbo" style="left: 176px; top: 290px; font-size: 50px; padding: 14px 22px 12px; background: var(--vermelho); color: var(--branco)">@</div>
+          <img id="c8-bom" class="abs" src="midia/monstro-valido.png" style="left: 560px; top: 380px; width: 200px" alt="" />
+          <div id="c8-tag-bom" class="abs px carimbo" style="left: 560px; top: 270px; font-size: 28px; padding: 14px 18px 12px; background: var(--verde-claro); color: var(--branco); text-shadow: 3px 3px 0 #000">VÁLIDO</div>
+          <img id="c8-jogador" class="abs" src="midia/jogador-pulando.png" style="left: 175px; top: 380px; width: 120px" alt="" />
+          <div id="c8-ponto" class="abs px ponto" style="left: 190px; top: 420px">+10</div>
+          <div id="c8-carimbo" class="abs px carimbo" style="left: 64px; top: 680px; background: var(--verde-claro); color: var(--branco); text-shadow: 3px 3px 0 #000">ERRO LÉXICO REMOVIDO!</div>
+        </div>
+      </section>
+
+      <!-- ===================== C9 · FASE 6 (52.5 – 56.5) ===================== -->
+      <section id="c9" class="cena clip" data-start="52.5" data-duration="4" data-track-index="0" style="background: var(--vermelho)">
+        <div id="c9-adesivos"></div>
+        <div id="c9-chip" class="abs px chip-fase">FASE 6</div>
+        <div id="c9-titulo" class="abs px contorno titulo-fase">FORTALEZA<br />SINTÁTICA</div>
+        <div id="c9-cadeado" class="abs adesivo" style="left: 760px; top: 190px; width: 180px; height: 220px"></div>
+        <div id="c9-breve" class="abs px carimbo" style="left: 650px; top: 420px; background: var(--ouro)">EM BREVE</div>
+        <div id="c9-obj" class="abs bloco objetivo">
+          <div class="rotulo px" style="color: var(--vermelho)">CHEFE FINAL</div>
+          <p>Corrija os erros sintáticos e derrote o Compiler Bug!</p>
+        </div>
+        <div class="abs zona">
+          <div id="c9-codigo" class="abs bloco codigo" data-codigo="if (x > 0 "></div>
+          <div id="c9-codigo-ok" class="abs bloco codigo" style="background: #0f3d26" data-codigo="if (x > 0)"></div>
+          <div id="c9-falta" class="abs px" style="left: 592px; width: 40px; text-align: center; top: 30px; font-size: 80px; color: var(--vermelho); text-shadow: 4px 4px 0 #000">?</div>
+          <div id="c9-msg" class="abs bloco" style="left: 0; top: 210px; width: 864px; padding: 22px 0 24px; text-align: center; background: var(--branco); font-weight: 700; font-size: 55px">Faltou fechar o parêntese!</div>
+        </div>
+      </section>
+
+      <!-- ===================== C10 · FINAL (56.5 – 64) ===================== -->
+      <section id="c10" class="cena clip" data-start="56.5" data-duration="7.5" data-track-index="0" style="background: var(--marinho)">
+        <div id="c10-adesivos"></div>
+        <div id="c10-pergunta" class="abs px contorno" style="left: 0; width: 1080px; top: 230px; text-align: center; font-size: 70px">PARA QUEM?</div>
+        <div id="c10-lista" class="abs" style="left: 108px; top: 400px; width: 864px"></div>
+        <div id="c10-logo" class="abs" style="left: 0; top: 330px; width: 1080px; text-align: center">
+          <div class="logo contorno" style="font-size: 84px; line-height: 124px">COMPILER</div>
+          <div class="logo contorno" style="font-size: 84px; line-height: 124px; color: var(--verde)">{&lt;/&gt;}</div>
+          <div class="logo contorno" style="font-size: 84px; line-height: 124px"><span style="color: var(--ouro)">EDU</span> <span style="color: var(--azul)">GAME</span></div>
+        </div>
+        <div id="c10-cta" class="abs bloco" style="left: 150px; top: 790px; width: 780px; padding: 24px 0 26px; text-align: center; background: var(--verde-claro); font-weight: 700; font-size: 70px">Aprenda jogando!</div>
+        <img id="c10-jogador" class="abs" src="midia/jogador-pulando.png" style="left: 440px; top: 980px; width: 200px" alt="" />
+        <div id="c10-credito" class="abs bloco" style="left: 108px; top: 1400px; width: 864px; padding: 26px 0 28px; text-align: center; background: var(--branco)">
+          <div class="px" style="font-size: 30px; line-height: 1.6; color: var(--marinho)">PROJETO DE EXTENSÃO (AEX)</div>
+          <div style="margin-top: 10px; font-weight: 700; font-size: 52px">Ciência da Computação · UENP</div>
+        </div>
+      </section>
+
+      <!-- transição em blocos de pixel, gerada por script -->
+      <div id="wipe"></div>
+
+      <!-- ===================== ÁUDIO: só cliques onde importa ===================== -->
+      <!-- C1 -->
+      <audio id="s-c1-logo" data-start="1.45" data-duration="0.42" data-volume="0.55" src="midia/pop.wav"></audio>
+      <audio id="s-c1-pulo" data-start="2.55" data-duration="0.41" data-volume="0.5" src="midia/pulo.wav"></audio>
+      <!-- C2 -->
+      <audio id="s-c2-pulo" data-start="8.1" data-duration="0.41" data-volume="0.5" src="midia/pulo.wav"></audio>
+      <!-- C3: um pop por mundo -->
+      <audio id="s-c3-1" data-start="11.2" data-duration="0.42" data-volume="0.4" src="midia/pop.wav"></audio>
+      <audio id="s-c3-2" data-start="11.6" data-duration="0.42" data-volume="0.4" src="midia/pop.wav"></audio>
+      <audio id="s-c3-3" data-start="12.0" data-duration="0.42" data-volume="0.4" src="midia/pop.wav"></audio>
+      <audio id="s-c3-4" data-start="12.4" data-duration="0.42" data-volume="0.4" src="midia/pop.wav"></audio>
+      <audio id="s-c3-5" data-start="12.8" data-duration="0.42" data-volume="0.4" src="midia/pop.wav"></audio>
+      <audio id="s-c3-6" data-start="13.2" data-duration="0.42" data-volume="0.4" src="midia/pop.wav"></audio>
+      <!-- C4: coleta das palavras-chave -->
+      <audio id="s-c4-pulo" data-start="20.5" data-duration="0.41" data-volume="0.45" src="midia/pulo.wav"></audio>
+      <audio id="s-c4-1" data-start="20.9" data-duration="0.54" data-volume="0.6" src="midia/acerto.ogg"></audio>
+      <audio id="s-c4-2" data-start="21.5" data-duration="0.54" data-volume="0.6" src="midia/acerto.ogg"></audio>
+      <audio id="s-c4-3" data-start="22.1" data-duration="0.54" data-volume="0.6" src="midia/acerto.ogg"></audio>
+      <!-- C5: tokens chegando na ponte -->
+      <audio id="s-c5-1" data-start="27.8" data-duration="0.42" data-volume="0.4" src="midia/pop.wav"></audio>
+      <audio id="s-c5-2" data-start="28.3" data-duration="0.42" data-volume="0.4" src="midia/pop.wav"></audio>
+      <audio id="s-c5-3" data-start="28.8" data-duration="0.42" data-volume="0.4" src="midia/pop.wav"></audio>
+      <audio id="s-c5-4" data-start="29.3" data-duration="0.42" data-volume="0.4" src="midia/pop.wav"></audio>
+      <audio id="s-c5-5" data-start="29.8" data-duration="0.42" data-volume="0.4" src="midia/pop.wav"></audio>
+      <audio id="s-c5-fim" data-start="30.5" data-duration="2.0" data-volume="0.4" data-fade-out="0.8" src="midia/portal.mp3"></audio>
+      <!-- C6 -->
+      <audio id="s-c6-sim" data-start="35.2" data-duration="0.54" data-volume="0.6" src="midia/acerto.ogg"></audio>
+      <!-- C7: ambiente da floresta (trilha da fase 4) + nós da árvore -->
+      <audio id="s-c7-amb" data-start="36.5" data-duration="8" data-volume="0.35" data-fade-in="0.6" data-fade-out="0.8" src="midia/floresta.wav"></audio>
+      <audio id="s-c7-1" data-start="39.5" data-duration="0.42" data-volume="0.45" src="midia/pop.wav"></audio>
+      <audio id="s-c7-2" data-start="40.0" data-duration="0.42" data-volume="0.45" src="midia/pop.wav"></audio>
+      <audio id="s-c7-3" data-start="40.5" data-duration="0.42" data-volume="0.45" src="midia/pop.wav"></audio>
+      <audio id="s-c7-4" data-start="41.0" data-duration="0.42" data-volume="0.45" src="midia/pop.wav"></audio>
+      <audio id="s-c7-5" data-start="41.5" data-duration="0.42" data-volume="0.45" src="midia/pop.wav"></audio>
+      <audio id="s-c7-fim" data-start="42.1" data-duration="0.54" data-volume="0.6" src="midia/acerto.ogg"></audio>
+      <!-- C8: @ vira monstro e é derrotado -->
+      <audio id="s-c8-erro" data-start="47.6" data-duration="0.53" data-volume="0.6" src="midia/erro.ogg"></audio>
+      <audio id="s-c8-pulo" data-start="48.8" data-duration="0.41" data-volume="0.5" src="midia/pulo.wav"></audio>
+      <audio id="s-c8-acerto" data-start="49.45" data-duration="0.54" data-volume="0.6" src="midia/acerto.ogg"></audio>
+      <!-- C9 -->
+      <audio id="s-c9-erro" data-start="54.3" data-duration="0.53" data-volume="0.55" src="midia/erro.ogg"></audio>
+      <audio id="s-c9-ok" data-start="55.4" data-duration="0.54" data-volume="0.6" src="midia/acerto.ogg"></audio>
+      <!-- C10 -->
+      <audio id="s-c10-1" data-start="57.3" data-duration="0.42" data-volume="0.4" src="midia/pop.wav"></audio>
+      <audio id="s-c10-2" data-start="57.65" data-duration="0.42" data-volume="0.4" src="midia/pop.wav"></audio>
+      <audio id="s-c10-3" data-start="58.0" data-duration="0.42" data-volume="0.4" src="midia/pop.wav"></audio>
+      <audio id="s-c10-4" data-start="58.35" data-duration="0.42" data-volume="0.4" src="midia/pop.wav"></audio>
+      <audio id="s-c10-fim" data-start="60.9" data-duration="2.6" data-volume="0.4" data-fade-out="1.2" src="midia/portal.mp3"></audio>
+    </div>
+
+    <script>
+      // ---------------------------------------------------------------------------
+      // Adesivos em pixel art: '#' = cor do adesivo, 'o' = contorno preto.
+      // ---------------------------------------------------------------------------
+      const SPRITES = {
+        estrela: [
+          ".....o.....",
+          "....o#o....",
+          "....o#o....",
+          "ooooo#ooooo",
+          "o#########o",
+          ".o#######o.",
+          "..o#####o..",
+          "..o##o##o..",
+          ".o##o.o##o.",
+          "o##o...o##o",
+          "ooo.....ooo",
+        ],
+        mais: ["..ooo..", "..o#o..", "ooo#ooo", "o#####o", "ooo#ooo", "..o#o..", "..ooo.."],
+        cadeado: [
+          "..ooooo..",
+          ".o#####o.",
+          ".o#ooo#o.",
+          ".o#o.o#o.",
+          "ooooooooo",
+          "o#######o",
+          "o###o###o",
+          "o###o###o",
+          "o#######o",
+          "o#######o",
+          "ooooooooo",
+        ],
+        visto: [
+          ".......oo",
+          "......o#o",
+          ".....o#o.",
+          "oo..o#o..",
+          "o#oo#o...",
+          ".o##o....",
+          "..oo.....",
+        ],
+        seta: ["..ooo..", "..o#o..", "..o#o..", "ooo#ooo", "o#####o", ".o###o.", "..o#o..", "...o..."],
+      };
+
+      function pixelSvg(nome, cor) {
+        const linhas = SPRITES[nome];
+        const h = linhas.length;
+        const w = linhas[0].length;
+        let rects = "";
+        linhas.forEach((linha, y) => {
+          [...linha].forEach((c, x) => {
+            if (c === ".") return;
+            const fill = c === "o" ? "#000" : cor;
+            rects += `<rect x="${x}" y="${y}" width="1.02" height="1.02" fill="${fill}"/>`;
+          });
+        });
+        return `<svg viewBox="0 0 ${w} ${h}" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">${rects}</svg>`;
+      }
+
+      function adesivo(nome, cor, x, y, tamanho) {
+        const el = document.createElement("div");
+        el.className = "adesivo";
+        const proporcao = SPRITES[nome].length / SPRITES[nome][0].length;
+        Object.assign(el.style, { left: x + "px", top: y + "px", width: tamanho + "px", height: tamanho * proporcao + "px" });
+        el.innerHTML = pixelSvg(nome, cor);
+        return el;
+      }
+
+      // Código em grade: um <span class="ch"> de 40px por caractere
+      const esc = (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", " ": "&nbsp;" })[c] || c;
+      document.querySelectorAll(".codigo[data-codigo]").forEach((el) => {
+        el.innerHTML = [...el.dataset.codigo].map((c, i) => `<span class="ch" data-i="${i}">${esc(c)}</span>`).join("");
+      });
+      // x do caractere i num código de n caracteres centralizado em 864px
+      const xCaractere = (n, i) => (864 - n * 40) / 2 + i * 40;
+
+      // Adesivos de cada cena: [sprite, cor, x, y, tamanho]
+      const ADESIVOS = {
+        c1: [["estrela", "#fabd05", 70, 150, 120], ["mais", "#42b863", 900, 360, 90], ["estrela", "#4285f5", 870, 1180, 130], ["mais", "#ea4335", 90, 1290, 80], ["estrela", "#42b863", 120, 1620, 100], ["mais", "#fabd05", 860, 1660, 100]],
+        c2: [["estrela", "#ffffff", 860, 120, 110], ["mais", "#19376d", 80, 1610, 90], ["estrela", "#42b863", 880, 1600, 120]],
+        c3: [["estrela", "#fabd05", 60, 110, 100], ["mais", "#42b863", 930, 200, 80], ["estrela", "#4285f5", 900, 1700, 110], ["mais", "#ea4335", 80, 1720, 80]],
+        c4: [["estrela", "#fabd05", 90, 1640, 110], ["mais", "#ffffff", 900, 1690, 90]],
+        c5: [["estrela", "#fabd05", 880, 1660, 110], ["mais", "#ffffff", 90, 1690, 90]],
+        c6: [["mais", "#fabd05", 90, 1650, 90]],
+        c7: [["estrela", "#ffd94d", 100, 1640, 110], ["mais", "#42b863", 900, 1690, 90]],
+        c8: [["estrela", "#8a4fff", 880, 1650, 120], ["mais", "#ea4335", 90, 1690, 90]],
+        c9: [["mais", "#fabd05", 900, 1660, 90]],
+        c10: [["estrela", "#fabd05", 70, 140, 110], ["mais", "#42b863", 930, 180, 80], ["estrela", "#4285f5", 880, 1620, 120], ["mais", "#ea4335", 100, 1660, 90]],
+      };
+      for (const [cena, lista] of Object.entries(ADESIVOS)) {
+        const alvo = document.getElementById(cena + "-adesivos");
+        lista.forEach((a) => alvo.appendChild(adesivo(...a)));
+      }
+      document.getElementById("c6-cadeado").innerHTML = pixelSvg("cadeado", "#fabd05");
+      document.getElementById("c9-cadeado").innerHTML = pixelSvg("cadeado", "#fabd05");
+
+      // C3 · lista dos 6 mundos
+      const MUNDOS = [
+        ["1", "Reino dos Tokens", "#34a853", true],
+        ["2", "Vale do Scanner", "#4285f5", true],
+        ["3", "Caverna do Parser", "#3d4256", false],
+        ["4", "Floresta da AST", "#12402c", true],
+        ["5", "Castelo Léxico", "#4a1f8c", true],
+        ["6", "Fortaleza Sintática", "#ea4335", false],
+      ];
+      const listaMundos = document.getElementById("c3-lista");
+      MUNDOS.forEach(([n, nome, cor, pronto], i) => {
+        const item = document.createElement("div");
+        item.className = "abs bloco mundo";
+        Object.assign(item.style, { left: "0", top: i * 190 + "px", width: "864px", height: "150px", background: cor, transformOrigin: "left center" });
+        item.innerHTML =
+          `<div class="abs px" style="left:24px;top:28px;width:84px;height:84px;background:#fabd05;border:5px solid #000;font-size:50px;line-height:80px;text-align:center">${n}</div>` +
+          `<div class="abs" style="left:140px;top:${pronto ? 34 : 24}px;font-weight:700;font-size:62px;color:#fff;text-shadow:4px 4px 0 #000;white-space:nowrap">${nome}</div>` +
+          (pronto ? "" : `<div class="abs px" style="left:142px;top:96px;font-size:22px;color:#ffd94d;text-shadow:3px 3px 0 #000">EM BREVE</div>`);
+        listaMundos.appendChild(item);
+      });
+
+      // C5 · tokens de "int x = 10;" (desafio 1 do Vale do Scanner)
+      const TOKENS_C5 = [
+        ["int", "k-palavra", "PALAVRA-CHAVE"],
+        ["x", "k-ident", "IDENTIFICADOR"],
+        ["=", "k-operador", "OPERADOR"],
+        ["10", "k-numero", "NÚMERO"],
+        [";", "k-simbolo", "SÍMBOLO"],
+      ];
+      const listaC5 = document.getElementById("c5-lista");
+      TOKENS_C5.forEach(([lexema, classe, tipo], i) => {
+        const linha = document.createElement("div");
+        linha.className = "abs c5-linha";
+        Object.assign(linha.style, { left: "0", top: i * 94 + "px", width: "864px", height: "84px" });
+        linha.innerHTML =
+          `<div class="abs token ${classe}" style="left:0;top:0;width:190px;padding:6px 0 4px;font-size:62px">${lexema}</div>` +
+          `<div class="abs" style="left:226px;top:12px;width:60px;height:60px">${pixelSvg("seta", "#ffd94d").replace("<svg", '<svg style="transform:rotate(-90deg);width:100%;height:100%"')}</div>` +
+          `<div class="abs px" style="left:318px;top:24px;font-size:42px;color:#fff;text-shadow:4px 4px 0 #000">${tipo}</div>`;
+        listaC5.appendChild(linha);
+      });
+
+      // C7 · árvore de "a + b * c": nós e arestas
+      const NOS = {
+        mais: ["+", 432, 250, "k-operador"],
+        a: ["a", 222, 430, "k-ident"],
+        vezes: ["*", 642, 430, "k-operador"],
+        b: ["b", 522, 600, "k-ident"],
+        c: ["c", 762, 600, "k-ident"],
+      };
+      const ARESTAS = [
+        ["mais", "a"],
+        ["mais", "vezes"],
+        ["vezes", "b"],
+        ["vezes", "c"],
+      ];
+      const arvore = document.getElementById("c7-arvore");
+      ARESTAS.forEach(([de, para]) => {
+        const [, x1, y1] = NOS[de];
+        const [, x2, y2] = NOS[para];
+        const comprimento = Math.hypot(x2 - x1, y2 - y1);
+        const angulo = (Math.atan2(y2 - y1, x2 - x1) * 180) / Math.PI - 90;
+        const aresta = document.createElement("div");
+        aresta.id = `c7-aresta-${para}`;
+        aresta.className = "abs";
+        Object.assign(aresta.style, { left: x1 - 6 + "px", top: y1 + "px", width: "12px", height: comprimento + "px", background: "#ffd94d", border: "3px solid #000", transformOrigin: "50% 0" });
+        aresta.dataset.angulo = angulo;
+        arvore.appendChild(aresta);
+      });
+      for (const [id, [rotulo, x, y, classe]] of Object.entries(NOS)) {
+        const no = document.createElement("div");
+        no.id = `c7-no-${id}`;
+        no.className = `abs token ${classe}`;
+        Object.assign(no.style, { left: x - 60 + "px", top: y - 60 + "px", width: "120px", height: "120px", padding: "0", fontSize: "84px", lineHeight: "104px" });
+        no.textContent = rotulo;
+        arvore.appendChild(no);
+      }
+
+      // C10 · público
+      const PUBLICO = ["Ensino Fundamental e Médio", "Cursos técnicos", "Iniciantes em programação", "Professores de Computação"];
+      const listaPublico = document.getElementById("c10-lista");
+      PUBLICO.forEach((texto, i) => {
+        const item = document.createElement("div");
+        item.className = "abs bloco publico";
+        Object.assign(item.style, { left: "0", top: i * 170 + "px", width: "864px", height: "130px", background: "#fff", transformOrigin: "left center" });
+        item.innerHTML =
+          `<div class="abs" style="left:26px;top:30px;width:76px;height:60px">${pixelSvg("visto", "#42b863")}</div>` +
+          `<div class="abs" style="left:130px;top:32px;font-weight:700;font-size:58px;white-space:nowrap">${texto}</div>`;
+        listaPublico.appendChild(item);
+      });
+
+      // Transição: 8 × 14 blocos
+      const wipe = document.getElementById("wipe");
+      for (let i = 0; i < 8 * 14; i++) wipe.appendChild(document.createElement("i"));
+
+      // ---------------------------------------------------------------------------
+      // Linha do tempo (tempos absolutos, em segundos)
+      // ---------------------------------------------------------------------------
+      const tl = gsap.timeline({ paused: true });
+      const q = (s) => document.querySelector(s);
+      const qa = (s) => document.querySelectorAll(s);
+
+      // primeira aparição: estado inicial aplicado já na criação
+      function pop(alvo, t, rot = -8, fim = 0) {
+        tl.fromTo(alvo, { scale: 0, rotation: rot }, { scale: 1, rotation: fim, duration: 0.45, ease: "back.out(2.5)" }, t);
+      }
+      function bate(alvo, t) {
+        tl.fromTo(alvo, { scale: 2.4, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "power4.out" }, t);
+      }
+      function entraDoLado(alvo, t, dx = -1200) {
+        tl.fromTo(alvo, { x: dx }, { x: 0, duration: 0.4, ease: "power4.out" }, t);
+      }
+      // tweens seguintes sobre o mesmo elemento: sem render imediato
+      function depois(alvo, de, para, t) {
+        tl.fromTo(alvo, de, { ...para, immediateRender: false }, t);
+      }
+      function mostra(alvo, t) {
+        tl.set(alvo, { opacity: 1 }, t);
+      }
+      function esconde(alvo, t) {
+        tl.set(alvo, { opacity: 0 }, t);
+      }
+      function giraAdesivos(cena, inicio, duracao) {
+        qa(`#${cena}-adesivos .adesivo`).forEach((el, i) => {
+          pop(el, inicio + 0.2 + i * 0.08, -40, 0);
+          depois(el, { rotation: 0 }, { rotation: i % 2 ? -50 : 50, duration: duracao, ease: "none" }, inicio + 0.65);
+        });
+      }
+      function flutua(alvo, t, vezes, amplitude = 14, periodo = 0.55) {
+        depois(alvo, { y: 0 }, { y: -amplitude, duration: periodo, ease: "sine.inOut", yoyo: true, repeat: vezes * 2 - 1 }, t);
+      }
+
+      // abertura padrão das fases: chip, título, card grande que encolhe pro canto (reframe), objetivo
+      // centro e largura finais de cada card-mini (left/top/width do CSS + altura da imagem)
+      const CARDS = { c4: [836, 322, 272], c5: [836, 322, 272], c7: [836, 322, 272], c8: [856, 337, 232] };
+      function aberturaFase(cena, s, temCard = true) {
+        pop(`#${cena}-chip`, s + 0.1, -12, -3);
+        bate(`#${cena}-titulo`, s + 0.3);
+        if (temCard) {
+          const card = q(`#${cena}-card`);
+          const [cx, cy, largura] = CARDS[cena];
+          const escala = 620 / largura;
+          const dx = 540 - cx;
+          const dy = 1050 - cy;
+          tl.fromTo(card, { x: dx, y: dy, scale: 0, rotation: -12 }, { scale: escala, rotation: -3, duration: 0.5, ease: "back.out(1.8)" }, s + 0.4);
+          depois(card, { x: dx, y: dy, scale: escala, rotation: -3 }, { x: 0, y: 0, scale: 1, rotation: 4, duration: 0.6, ease: "power3.inOut" }, s + 1.9);
+        }
+        tl.fromTo(`#${cena}-obj`, { scale: 0.6, opacity: 0, y: 40 }, { scale: 1, opacity: 1, y: 0, duration: 0.45, ease: "back.out(2)" }, s + 2.2);
+      }
+
+      // ---------- C1 · abertura (0 – 5) ----------
+      giraAdesivos("c1", 0, 4.4);
+      pop("#c1-selo", 0.15, -10, -2);
+      ["#c1-l1", "#c1-l2", "#c1-l3", "#c1-l4"].forEach((sel, i) => bate(sel, 0.5 + i * 0.32));
+      pop("#c1-sub", 1.95, 8, -2);
+      tl.fromTo("#c1-jogador", { y: 700 }, { y: 0, duration: 0.55, ease: "back.out(1.6)" }, 2.5);
+      flutua("#c1-jogador", 3.05, 2, 26, 0.45);
+
+      // ---------- C2 · premissa (5 – 10) ----------
+      giraAdesivos("c2", 5, 4.4);
+      ["#c2-t1", "#c2-t2", "#c2-t3"].forEach((sel, i) => entraDoLado(sel, 5.15 + i * 0.25, i % 2 ? 1200 : -1200));
+      pop("#c2-t4", 5.95, -10, -2);
+      tl.fromTo("#c2-janela", { scaleY: 0, transformOrigin: "50% 100%" }, { scaleY: 1, duration: 0.45, ease: "power4.out" }, 6.2);
+      // caminhada: alterna os quadros andando/parado enquanto atravessa a janela
+      tl.set(["#c2-parado", "#c2-pulando"], { opacity: 0 }, 0);
+      tl.fromTo(["#c2-andando", "#c2-parado"], { x: -420 }, { x: 0, duration: 1.4, ease: "none" }, 6.6);
+      for (let i = 0; i < 7; i++) {
+        const t = 6.6 + i * 0.2;
+        tl.set("#c2-andando", { opacity: i % 2 ? 0 : 1 }, t);
+        tl.set("#c2-parado", { opacity: i % 2 ? 1 : 0 }, t);
+      }
+      tl.set(["#c2-andando", "#c2-parado"], { opacity: 0 }, 8.0);
+      mostra("#c2-pulando", 8.0);
+      tl.fromTo("#c2-pulando", { y: 0 }, { y: -170, duration: 0.32, ease: "power2.out", yoyo: true, repeat: 1 }, 8.0);
+      pop("#c2-legenda", 8.4, 6, 1);
+
+      // ---------- C3 · mapa (10 – 16.5) ----------
+      giraAdesivos("c3", 10, 5.9);
+      bate("#c3-titulo", 10.15);
+      tl.fromTo("#c3-sub", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" }, 10.55);
+      qa("#c3-lista .mundo").forEach((el, i) => {
+        tl.fromTo(el, { scale: 0, rotation: i % 2 ? 6 : -6 }, { scale: 1, rotation: i % 2 ? 1 : -1, duration: 0.45, ease: "back.out(2.5)" }, 11.2 + i * 0.4);
+      });
+      // destaque passando pelos mundos jogáveis
+      [0, 1, 3, 4].forEach((i, k) => {
+        depois(qa("#c3-lista .mundo")[i], { scale: 1 }, { scale: 1.06, duration: 0.18, ease: "power2.out", yoyo: true, repeat: 1 }, 14.0 + k * 0.35);
+      });
+
+      // ---------- C4 · fase 1 (16.5 – 24.5) ----------
+      giraAdesivos("c4", 16.5, 7.4);
+      aberturaFase("c4", 16.5);
+      pop("#c4-placa", 19.4, -8, -2);
+      ["#c4-tk1", "#c4-tk2", "#c4-tk3", "#c4-tk4", "#c4-tk5", "#c4-tk6"].forEach((sel, i) => {
+        pop(sel, 19.75 + i * 0.09, i % 2 ? 12 : -12, i % 2 ? 3 : -3);
+      });
+      ["#c4-tk2", "#c4-tk4", "#c4-tk6"].forEach((sel, i) => flutua(sel, 20.5 + i * 0.1, 3, 12, 0.5));
+      tl.fromTo("#c4-jogador", { y: 800 }, { y: 0, duration: 0.4, ease: "back.out(1.6)" }, 20.4);
+      pop("#c4-placar", 20.4, 6, 2);
+      tl.set(["#c4-v1", "#c4-v2", "#c4-v3"], { opacity: 0 }, 0);
+      // coleta: int, if, return — cada token cresce, some e solta "+10"
+      [["#c4-tk1", "#c4-p1", "#c4-v1", "#c4-v0"], ["#c4-tk3", "#c4-p2", "#c4-v2", "#c4-v1"], ["#c4-tk5", "#c4-p3", "#c4-v3", "#c4-v2"]].forEach(([tk, p, novo, velho], i) => {
+        const t = 20.9 + i * 0.6;
+        depois(tk, { scale: 1 }, { scale: 1.35, duration: 0.12, ease: "power2.out" }, t);
+        depois(tk, { scale: 1.35, opacity: 1 }, { scale: 0, opacity: 0, duration: 0.22, ease: "power3.in" }, t + 0.12);
+        tl.fromTo(p, { opacity: 0, y: 30 }, { opacity: 1, y: -50, duration: 0.5, ease: "power2.out" }, t);
+        depois(p, { opacity: 1 }, { opacity: 0, duration: 0.25 }, t + 0.5);
+        esconde(velho, t + 0.05);
+        mostra(novo, t + 0.05);
+        depois("#c4-placar", { scale: 1 }, { scale: 1.12, duration: 0.1, yoyo: true, repeat: 1 }, t + 0.05);
+      });
+      // os outros tokens não eram palavras-chave
+      depois(["#c4-tk2", "#c4-tk4", "#c4-tk6"], { opacity: 1 }, { opacity: 0.3, duration: 0.3 }, 22.6);
+
+      // ---------- C5 · fase 2 (24.5 – 32.5) ----------
+      giraAdesivos("c5", 24.5, 7.4);
+      aberturaFase("c5", 24.5);
+      tl.fromTo("#c5-codigo", { scaleX: 0 }, { scaleX: 1, duration: 0.4, ease: "power4.out" }, 27.2);
+      // o feixe do scanner varre o código; a cada token, uma linha entra na ponte
+      // tokens: int (0–2), x (4), = (6), 10 (8–9), ; (10)
+      const PARADAS_C5 = [0, 4, 6, 8, 10].map((i) => xCaractere(11, i) - 6);
+      const LARGURAS_C5 = [3, 1, 1, 2, 1].map((n) => n * 40 + 12);
+      tl.set("#c5-feixe", { x: PARADAS_C5[0], width: LARGURAS_C5[0] }, 0);
+      tl.fromTo("#c5-feixe", { opacity: 0 }, { opacity: 1, duration: 0.15 }, 27.6);
+      qa("#c5-lista .c5-linha").forEach((linha, i) => {
+        const t = 27.8 + i * 0.5;
+        const de = PARADAS_C5[Math.max(i - 1, 0)];
+        depois("#c5-feixe", { x: de, width: LARGURAS_C5[Math.max(i - 1, 0)] }, { x: PARADAS_C5[i], width: LARGURAS_C5[i], duration: 0.22, ease: "power2.inOut" }, t - 0.22);
+        tl.fromTo(linha, { x: 1100, opacity: 1 }, { x: 0, duration: 0.35, ease: "back.out(1.4)" }, t);
+      });
+      depois("#c5-feixe", { opacity: 1 }, { opacity: 0, duration: 0.2 }, 30.3);
+      pop("#c5-carimbo", 30.5, -14, -4);
+
+      // ---------- C6 · fase 3, em breve (32.5 – 36.5) ----------
+      giraAdesivos("c6", 32.5, 3.9);
+      pop("#c6-chip", 32.6, -12, -3);
+      bate("#c6-titulo", 32.75);
+      pop("#c6-cadeado", 32.9, -20, 4);
+      pop("#c6-breve", 33.2, 20, 6);
+      tl.fromTo("#c6-obj", { scale: 0.6, opacity: 0, y: 40 }, { scale: 1, opacity: 1, y: 0, duration: 0.45, ease: "back.out(2)" }, 33.4);
+      tl.fromTo("#c6-codigo", { scaleX: 0 }, { scaleX: 1, duration: 0.4, ease: "power4.out" }, 33.9);
+      bate("#c6-pergunta", 34.3);
+      pop("#c6-sim", 34.6, -10, -2);
+      pop("#c6-nao", 34.7, 10, 2);
+      depois("#c6-sim", { scale: 1 }, { scale: 1.18, duration: 0.15, yoyo: true, repeat: 1 }, 35.2);
+      depois("#c6-nao", { opacity: 1 }, { opacity: 0.35, duration: 0.25 }, 35.2);
+
+      // ---------- C7 · fase 4 (36.5 – 44.5) ----------
+      giraAdesivos("c7", 36.5, 7.4);
+      aberturaFase("c7", 36.5);
+      tl.fromTo("#c7-codigo", { scaleX: 0 }, { scaleX: 1, duration: 0.4, ease: "power4.out" }, 39.0);
+      const ORDEM_C7 = [["mais", null], ["a", "a"], ["vezes", "vezes"], ["b", "b"], ["c", "c"]];
+      qa("#c7-arvore [id^='c7-aresta-']").forEach((a) => tl.set(a, { rotation: Number(a.dataset.angulo), scaleY: 0 }, 0));
+      ORDEM_C7.forEach(([no, aresta], i) => {
+        const t = 39.5 + i * 0.5;
+        if (aresta) depois(`#c7-aresta-${aresta}`, { scaleY: 0 }, { scaleY: 1, duration: 0.25, ease: "power2.out" }, t - 0.2);
+        pop(`#c7-no-${no}`, t, i % 2 ? 14 : -14, 0);
+      });
+      // o código sobe e dá lugar à árvore
+      depois("#c7-codigo", { y: 0, opacity: 1 }, { y: -40, opacity: 0, duration: 0.3, ease: "power2.in" }, 39.2);
+      pop("#c7-licao", 42.1, -6, -1);
+      depois(["#c7-no-vezes", "#c7-no-b", "#c7-no-c"], { scale: 1 }, { scale: 1.15, duration: 0.18, yoyo: true, repeat: 3 }, 42.5);
+
+      // ---------- C8 · fase 5 (44.5 – 52.5) ----------
+      giraAdesivos("c8", 44.5, 7.4);
+      aberturaFase("c8", 44.5);
+      tl.set(["#c8-codigo-ok", "#c8-derrotado", "#c8-jogador"], { opacity: 0 }, 0);
+      tl.fromTo("#c8-codigo", { scaleX: 0 }, { scaleX: 1, duration: 0.4, ease: "power4.out" }, 47.0);
+      // o @ fica vermelho e treme
+      const arroba = q('#c8-codigo .ch[data-i="4"]');
+      tl.set(arroba, { color: "#ea4335", textShadow: "4px 4px 0 #000" }, 47.6);
+      tl.fromTo(arroba, { x: 0 }, { x: 10, duration: 0.05, yoyo: true, repeat: 7, ease: "none" }, 47.6);
+      // monstros entram no chão do castelo
+      pop("#c8-mal", 47.9, -14, 0);
+      pop("#c8-tag-mal", 48.05, 12, -4);
+      pop("#c8-bom", 48.2, 14, 0);
+      pop("#c8-tag-bom", 48.35, -12, 4);
+      flutua("#c8-bom", 48.7, 3, 10, 0.4);
+      // o jogador cai do alto em cima do monstro de erro
+      mostra("#c8-jogador", 48.8);
+      // arco baixo o bastante para não cobrir o código (topo do arco = 150px na zona)
+      tl.fromTo("#c8-jogador", { x: -320, y: -120 }, { x: 0, duration: 0.65, ease: "none" }, 48.8);
+      depois("#c8-jogador", { y: -120 }, { y: -230, duration: 0.25, ease: "power2.out" }, 48.8);
+      depois("#c8-jogador", { y: -230 }, { y: -170, duration: 0.4, ease: "power2.in" }, 49.05);
+      esconde(["#c8-mal", "#c8-tag-mal"], 49.45);
+      mostra("#c8-derrotado", 49.45);
+      tl.fromTo("#c8-derrotado", { scaleX: 1.6, scaleY: 0.5 }, { scaleX: 1, scaleY: 1, duration: 0.35, ease: "back.out(3)" }, 49.45);
+      depois("#c8-jogador", { y: -170 }, { y: -230, duration: 0.25, ease: "power2.out" }, 49.45);
+      depois("#c8-jogador", { y: -230 }, { y: 0, duration: 0.35, ease: "power2.in" }, 49.7);
+      tl.fromTo("#c8-ponto", { opacity: 0, y: 30 }, { opacity: 1, y: -60, duration: 0.5, ease: "power2.out" }, 49.45);
+      depois("#c8-ponto", { opacity: 1 }, { opacity: 0, duration: 0.25 }, 49.95);
+      // o código fica limpo
+      esconde("#c8-codigo", 50.0);
+      mostra("#c8-codigo-ok", 50.0);
+      tl.fromTo("#c8-codigo-ok", { scale: 1.12 }, { scale: 1, duration: 0.35, ease: "back.out(3)" }, 50.0);
+      pop("#c8-carimbo", 50.3, -14, -3);
+
+      // ---------- C9 · fase 6, em breve (52.5 – 56.5) ----------
+      giraAdesivos("c9", 52.5, 3.9);
+      pop("#c9-chip", 52.6, -12, -3);
+      bate("#c9-titulo", 52.75);
+      pop("#c9-cadeado", 52.9, -20, 4);
+      pop("#c9-breve", 53.2, 20, 6);
+      tl.fromTo("#c9-obj", { scale: 0.6, opacity: 0, y: 40 }, { scale: 1, opacity: 1, y: 0, duration: 0.45, ease: "back.out(2)" }, 53.4);
+      tl.set("#c9-codigo-ok", { opacity: 0 }, 0);
+      tl.fromTo("#c9-codigo", { scaleX: 0 }, { scaleX: 1, duration: 0.4, ease: "power4.out" }, 53.9);
+      pop("#c9-falta", 54.3, -30, 0);
+      depois("#c9-falta", { y: 0 }, { y: -14, duration: 0.15, yoyo: true, repeat: 5 }, 54.6);
+      pop("#c9-msg", 54.5, 6, -1);
+      esconde(["#c9-codigo", "#c9-falta"], 55.4);
+      mostra("#c9-codigo-ok", 55.4);
+      tl.fromTo("#c9-codigo-ok", { scale: 1.12 }, { scale: 1, duration: 0.35, ease: "back.out(3)" }, 55.4);
+
+      // ---------- C10 · final (56.5 – 64) ----------
+      giraAdesivos("c10", 56.5, 6.9);
+      bate("#c10-pergunta", 56.65);
+      qa("#c10-lista .publico").forEach((el, i) => {
+        tl.fromTo(el, { scale: 0, rotation: i % 2 ? 5 : -5 }, { scale: 1, rotation: i % 2 ? 1 : -1, duration: 0.45, ease: "back.out(2.5)" }, 57.3 + i * 0.35);
+      });
+      // a lista sai e o logo volta
+      depois("#c10-pergunta", { opacity: 1 }, { opacity: 0, duration: 0.2 }, 60.0);
+      qa("#c10-lista .publico").forEach((el, i) => {
+        depois(el, { x: 0 }, { x: i % 2 ? 1200 : -1200, duration: 0.35, ease: "power3.in" }, 60.0 + i * 0.06);
+      });
+      bate("#c10-logo", 60.5);
+      pop("#c10-cta", 60.9, -8, -2);
+      tl.fromTo("#c10-jogador", { y: 1100 }, { y: 0, duration: 0.55, ease: "back.out(1.6)" }, 61.1);
+      flutua("#c10-jogador", 61.7, 2, 30, 0.45);
+      pop("#c10-credito", 61.4, 6, 0);
+
+      // ---------- transições em blocos de pixel ----------
+      const CORTES = [
+        [5, "#fabd05"],
+        [10, "#0e1f40"],
+        [16.5, "#34a853"],
+        [24.5, "#4285f5"],
+        [32.5, "#3d4256"],
+        [36.5, "#12402c"],
+        [44.5, "#4a1f8c"],
+        [52.5, "#ea4335"],
+        [56.5, "#19376d"],
+      ];
+      const blocos = qa("#wipe i");
+      CORTES.forEach(([t, cor], i) => {
+        const opts = { immediateRender: false };
+        tl.set(blocos, { backgroundColor: cor }, t - 0.36);
+        tl.fromTo(blocos, { scale: 0 }, { ...opts, scale: 1, duration: 0.14, ease: "power2.out", stagger: { grid: [14, 8], from: i % 2 ? "start" : "end", amount: 0.2 } }, t - 0.35);
+        tl.fromTo(blocos, { scale: 1 }, { ...opts, scale: 0, duration: 0.14, ease: "power2.in", stagger: { grid: [14, 8], from: i % 2 ? "start" : "end", amount: 0.2 } }, t + 0.02);
+      });
+
+      // garante a duração total
+      tl.set({}, {}, 64);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
